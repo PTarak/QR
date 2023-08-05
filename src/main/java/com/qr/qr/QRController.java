@@ -40,8 +40,8 @@ public class QRController {
         try {
             bitMatrix = qrCodeWriter.encode(data,
                     BarcodeFormat.QR_CODE,
-                    100,
-                    100,
+                    200,
+                    200,
                     hintsMap);
         } catch (Exception e) {
             throw new RuntimeException("Error in generating the qr code {}", e);
