@@ -5,6 +5,8 @@ import com.google.zxing.common.BitMatrix;
 import com.google.zxing.qrcode.QRCodeWriter;
 import com.google.zxing.BarcodeFormat;
 import com.qr.qr.dto.QrData;
+import com.qr.qr.service.QuickResponseCodeGeneration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.*;
 
@@ -21,6 +23,8 @@ import java.io.ByteArrayOutputStream;
 @RestController
 @RequestMapping("/QRValidation")
 public class QRController {
+    @Autowired
+    QuickResponseCodeGeneration quickResponseCodeGeneration;
 
     @GetMapping(value = "/dummy")
     public String dummyEndPoint() {
@@ -33,28 +37,7 @@ public class QRController {
     public byte[] qrCodeGeneration(@RequestBody QrData qrData) {
         System.out.println(qrData.toString());
         String data = qrData.getData();
-        QRCodeWriter qrCodeWriter = new QRCodeWriter();
-        Map<EncodeHintType, Object> hintsMap = new HashMap<>();
-        hintsMap.put(EncodeHintType.CHARACTER_SET, "UTF-8");
-        BitMatrix bitMatrix;
-        try {
-            bitMatrix = qrCodeWriter.encode(data,
-                    BarcodeFormat.QR_CODE,
-                    200,
-                    200,
-                    hintsMap);
-        } catch (Exception e) {
-            throw new RuntimeException("Error in generating the qr code {}", e);
-        }
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BufferedImage qrImage = toBufferedImage(bitMatrix);
-        try {
-            ImageIO.write(qrImage, "jpeg", outputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Error in writing image to stream {}", e);
-        }
-        return outputStream.toByteArray();
+        return quickResponseCodeGeneration.generatingQuickResponseCode(data);
     }
 
     @GetMapping(value = "/code/{data}", produces = MediaType.IMAGE_JPEG_VALUE)
@@ -74,30 +57,12 @@ public class QRController {
         }
 
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        BufferedImage qrImage = toBufferedImage(bitMatrix);
+        BufferedImage qrImage = quickResponseCodeGeneration.toBufferedImage(bitMatrix);
         try {
             ImageIO.write(qrImage, "jpeg", outputStream);
         } catch (IOException e) {
             throw new RuntimeException("Failed to write QR code image to output stream.", e);
         }
         return outputStream.toByteArray();
-    }
-
-    private BufferedImage toBufferedImage(BitMatrix matrix) {
-        int width = matrix.getWidth();
-        int height = matrix.getHeight();
-        BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D graphics = (Graphics2D) image.getGraphics();
-        graphics.setColor(Color.WHITE);
-        graphics.fillRect(0, 0, width, height);
-        graphics.setColor(Color.BLACK);
-        for (int x = 0; x < width; x++) {
-            for (int y = 0; y < height; y++) {
-                if (matrix.get(x, y)) {
-                    graphics.fillRect(x, y, 1, 1);
-                }
-            }
-        }
-        return image;
     }
 }
